@@ -1,74 +1,18 @@
 # krostdi-island
 
+## Health
 
-0
+Health is from 0 to 100, starts at 100
+At 0 Health, avatar dies.
 
-WWWWWW
-WGGGGW
-WGTTGW
-WGTTGW
-WGGGGW
-WWWWWW
+## Satiety
 
-1
+For each ?? movecost, decrease Satiety
+Satiety is from 0 to 100, starts at 100
+At 0 Satiety, take 1 health off?
 
-WGTTGW
-WGTTGW
-WGTTGW
-WGTTGW
-WGGGGW
-WWWWWW
+## Energy
 
-2
-
-WWWWWW
-WGGGGG
-WGTTTT
-WGTTTT
-WGGGGG
-WWWWWW
-
-3
-
-WGTTGW
-WGTTGW
-WGTTTT
-WGTTTT
-WGGGGG
-WWWWWW
-
-4
-
-WWWWWW
-WGGGGW
-WGTTGW
-WGTTGW
-WGTTGW
-WGTTGW
-
-5
-
-WGTTGW
-WGTTGW
-WGTTGW
-WGTTGW
-WGTTGW
-WGTTGW
-
-6
-
-WWWWWW
-WGGGGG
-WGTTTT
-WGTTTT
-WGTTGG
-WGTTGW
-
-7
-
-WWWWWW
-WGGGGG
-WGTTTT
-WGTTTT
-WGTTGG
-WGTTGW
+For each ?? movecost, decrease Energy
+Energy is from 0 to 100, starts at 100
+At 0 Energy, ??
