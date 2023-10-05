@@ -1,8 +1,9 @@
-local world
 function package.preload.Maze()
-return{Create=function(a,b)local c=table.insert;local d=math.random;local e={}while a>#e do local f={}c(e,f)while b>#f do c(f,0)end end;local g={{f=1,x=0,y=-1,o=3},{f=2,x=1,y=0,o=4},{f=4,x=0,y=1,o=1},{f=8,x=-1,y=0,o=2}}local h=d(1,a)local i=d(1,b)local j;local k;e[h][i]=32;local l=0;for m,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b then l=l+1;e[j][k]=e[j][k]+16 end end;while l>0 do repeat h=d(1,a)i=d(1,b)until e[h][i]&16==16;local o={}for p,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b and e[j][k]&32==32 then c(o,p)end end;local q=o[d(1,#o)]e[h][i]=e[h][i]|g[q].f;e[h][i]=e[h][i]&47;e[h][i]=e[h][i]|32;j=h+g[q].x;k=i+g[q].y;q=g[q].o;e[j][k]=e[j][k]|g[q].f;l=l-1;for m,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b and e[j][k]<16 then l=l+1;e[j][k]=e[j][k]+16 end end end;for h=1,a do for i=1,b do e[h][i]=e[h][i]&15 end end;return e end}
+	return{Create=function(a,b)local c=table.insert;local d=math.random;local e={}while a>#e do local f={}c(e,f)while b>#f do c(f,0)end end;local g={{f=1,x=0,y=-1,o=3},{f=2,x=1,y=0,o=4},{f=4,x=0,y=1,o=1},{f=8,x=-1,y=0,o=2}}local h=d(1,a)local i=d(1,b)local j;local k;e[h][i]=32;local l=0;for m,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b then l=l+1;e[j][k]=e[j][k]+16 end end;while l>0 do repeat h=d(1,a)i=d(1,b)until e[h][i]&16==16;local o={}for p,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b and e[j][k]&32==32 then c(o,p)end end;local q=o[d(1,#o)]e[h][i]=e[h][i]|g[q].f;e[h][i]=e[h][i]&47;e[h][i]=e[h][i]|32;j=h+g[q].x;k=i+g[q].y;q=g[q].o;e[j][k]=e[j][k]|g[q].f;l=l-1;for m,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b and e[j][k]<16 then l=l+1;e[j][k]=e[j][k]+16 end end end;for h=1,a do for i=1,b do e[h][i]=e[h][i]&15 end end;return e end}
 end
 local Maze=require("Maze")
+local world
+local tf
 local CONST={
 	MAZE_COLS=8,
 	MAZE_ROWS=8,
@@ -24,13 +25,68 @@ local CONST={
 			SPR=67,
 			MC=1
 		},
-		BT={
-			SPR=68
+		BTN={
+			SPR=68,
+			VB="BOAT",
+			DX=0,
+			DY=-11
+		},
+		BTE={
+			SPR=68,
+			VB="BOAT",
+			DX=11,
+			DY=0
+		},
+		BTS={
+			SPR=68,
+			VB="BOAT",
+			DX=0,
+			DY=11
+		},
+		BTW={
+			SPR=68,
+			VB="BOAT",
+			DX=-11,
+			DY=0
+		},
+		TOWNR={
+			SPR=128,
+			VB="TOWN"
+		},
+		TOWNO={
+			SPR=129,
+			VB="TOWN"
+		},
+		TOWNY={
+			SPR=130,
+			VB="TOWN"
+		},
+		TOWNG={
+			SPR=131,
+			VB="TOWN"
+		},
+		TOWNC={
+			SPR=132,
+			VB="TOWN"
+		},
+		TOWNB={
+			SPR=133,
+			VB="TOWN"
+		},
+		TOWNM={
+			SPR=134,
+			VB="TOWN"
+		},
+		TOWNW={
+			SPR=135,
+			VB="TOWN"
 		}
 	},
 	CHTYPS={
 		AVATAR={
-			SPR=256
+			SPR=256,
+			STARVE_INT=480,
+			EXHAUST_INT=1440
 		}
 	}
 }
@@ -63,101 +119,130 @@ function MkAtlas()
 		end
 		table.insert(atlas,aX)
 	end
-	for col=1,CONST.MAZE_COLS do
-		for row=1,CONST.MAZE_ROWS do
-			local mazeCell=maze[col][row]
-			local mX=(mazeCell%4)*6
-			local mY=(mazeCell//4)*6
-			atlas[col*2-1][row*2-1]=MkMp(mX,mY)
-			atlas[col*2][row*2-1]=MkMp(mX+3,mY)
-			atlas[col*2-1][row*2]=MkMp(mX,mY+3)
-			atlas[col*2][row*2]=MkMp(mX+3,mY+3)
+	for x=1,CONST.MAZE_COLS do
+		for y=1,CONST.MAZE_ROWS do
+			local mzCell=maze[x][y]
+			local mX=(mzCell%4)*6
+			local mY=(mzCell//4)*6
+			atlas[x*2-1][y*2-1]=MkMp(mX,mY)
+			atlas[x*2][y*2-1]=MkMp(mX+3,mY)
+			atlas[x*2-1][y*2]=MkMp(mX,mY+3)
+			atlas[x*2][y*2]=MkMp(mX+3,mY+3)
 		end
 	end
 	return atlas
 end
-function MkChar(world,charType)
+function MkChar(chTyp)
 	table.insert(world.chars,{
-		charType=charType,
-		moveCost=0
+		chTyp=chTyp,
+		moveCost=0,
+		hunger=0,
+		starve=0,
+		fatigue=0,
+		exhaust=0
 	})
 	return #world.chars
 end
-function MkAvatar(world)
-	local charId=MkChar(world,"AVATAR")
-	world.atlas[1][1][CONST.MAP_COLS//2+1][CONST.MAP_ROWS//2+1].charId=charId
-	return {
+function MkAvatar()
+	local charId=MkChar("AVATAR")
+	world.atlas[1][1][6][6].charId=charId
+	world.av= {
 		charId=charId,
 		aX=1,
-		atlasRow=1,
-		mX=CONST.MAP_COLS//2+1,
-		mY=CONST.MAP_ROWS//2+1
+		aY=1,
+		mX=6,
+		mY=6,
 	}
 end
-function MkRoads(world)
+function MkRoads()
 	local maze=Maze.Create(CONST.MAZE_COLS*2,CONST.MAZE_ROWS*2)
+	local towns={TOWNR,TOWNO,TOWNY,TOWNG,TOWNC,TOWNB,TOWNM,TOWNW}
 	for col=1,CONST.MAZE_COLS*2 do
 		for row=1,CONST.MAZE_ROWS*2 do
-			local mazeCell=maze[col][row]
+			local mzCell=maze[col][row]
 			local mp=world.atlas[col][row]
-			if (mazeCell&1)==1 then
+			if (mzCell&1)==1 then
 				for y=8,1,-1 do
 					if mp[8][y].terr=="WT" then
 						if y==5 then
-							mp[8][y].terr="BT"
+							mp[8][y].terr="BTN"
 						end
 					else
 						mp[8][y].terr="RD"
 					end
 				end
 			end
-			if (mazeCell&2)==2 then
+			if (mzCell&2)==2 then
 				for x=8,15 do
 					if mp[x][8].terr=="WT" then
 						if x==11 then
-							mp[x][8].terr="BT"
+							mp[x][8].terr="BTE"
 						end
 					else
 						mp[x][8].terr="RD"
 					end
 				end
 			end
-			if (mazeCell&4)==4 then
+			if (mzCell&4)==4 then
 				for y=8,15 do
 					if mp[8][y].terr=="WT" then
 						if y==11 then
-							mp[8][y].terr="BT"
+							mp[8][y].terr="BTS"
 						end
 					else
 						mp[8][y].terr="RD"
 					end
 				end
 			end
-			if (mazeCell&8)==8 then
+			if (mzCell&8)==8 then
 				for x=8,1,-1 do
 					if mp[x][8].terr=="WT" then
 						if x==5 then
-							mp[x][8].terr="BT"
+							mp[x][8].terr="BTW"
 						end
 					else
 						mp[x][8].terr="RD"
 					end
 				end
+			end
+			if mzCell==8 or mzCell==4 or mzCell==2 or mzCell==1 then
+				local town=towns[math.random(1,#towns)]
+				mp[8][8].terr=town
 			end
 		end
 	end
 end
 function MkWorld()
-	local world={
+	world={
 		chars={},
 		atlas=MkAtlas()
 	}
-	MkRoads(world)
-	world.av=MkAvatar(world)
-	return world
+	MkRoads()
+	MkAvatar()
 end
-function BOOT()
-	world=MkWorld()
+function AddMoves(char,mc)
+	local chtype=CONST.CHTYPS[char.chTyp]
+	char.moveCost=char.moveCost+mc
+	char.hunger=char.hunger+mc
+	if char.hunger>=chtype.STARVE_INT then
+		char.starve=char.starve+1
+		char.hunger=char.hunger-chtype.STARVE_INT
+	end
+	char.fatigue=char.fatigue+mc
+	if char.fatigue>=chtype.EXHAUST_INT then
+		char.exhaust=char.exhaust+1
+		char.fatigue=char.fatigue-chtype.EXHAUST_INT
+	end
+end
+function PlaceAvatar(aX,aY,mX,mY)
+	local av=world.av
+	local charId=world.atlas[av.aX][av.aY][av.mX][av.mY].charId
+	world.atlas[av.aX][av.aY][av.mX][av.mY].charId=nil
+	av.aX=aX
+	av.aY=aY
+	av.mX=mX
+	av.mY=mY
+	world.atlas[av.aX][av.aY][av.mX][av.mY].charId=charId
 end
 function MvAvatar(dX,dY)
 	local av=world.av
@@ -171,7 +256,7 @@ function MvAvatar(dX,dY)
 		nAX=nAX+1
 	end	
 	local nMY=av.mY+dY
-	local nAY=av.atlasRow
+	local nAY=av.aY
 	if nMY<1 then
 		nMY=nMY+CONST.MAP_ROWS
 		nAY=nAY-1
@@ -181,51 +266,62 @@ function MvAvatar(dX,dY)
 	end
 	local nCell=world.atlas[nAX][nAY][nMX][nMY]
 	local nTerr=nCell.terr
-	if CONST.TERRS[nTerr].MC~=nil then
-		--TODO: move cost affects player somehow
-		local charId=world.atlas[av.aX][av.atlasRow][av.mX][av.mY].charId
-		local character=world.chars[charId]
-		character.moveCost=character.moveCost+CONST.TERRS[nTerr].MC
-		world.atlas[av.aX][av.atlasRow][av.mX][av.mY].charId=nil
-		av.aX=nAX
-		av.atlasRow=nAY
-		av.mX=nMX
-		av.mY=nMY
-		world.atlas[av.aX][av.atlasRow][av.mX][av.mY].charId=charId
+	local td=CONST.TERRS[nTerr]
+	if td.MC~=nil then
+		local charId=world.atlas[av.aX][av.aY][av.mX][av.mY].charId
+		local char=world.chars[charId]
+		local mc=CONST.TERRS[nTerr].MC
+		AddMoves(char,mc)
+		PlaceAvatar(nAX,nAY,nMX,nMY)
+	elseif td.VB=="BOAT" then
+		--TODO: pay for boat travel
+		MvAvatar(td.DX,td.DY)
 	end
 end
 function DrawMap()
+	map(24,0,17,17)
 	local av=world.av
-	local mp=world.atlas[av.aX][av.atlasRow]
+	local mp=world.atlas[av.aX][av.aY]
 	for col,mX in ipairs(mp) do
 		for row,cell in ipairs(mX) do
 			local x=col*8
 			local y=row*8
 			spr(CONST.TERRS[cell.terr].SPR,x,y)
 			if cell.charId~=nil then
-				local character=world.chars[cell.charId]
-				local charType=CONST.CHTYPS[character.charType]
-				spr(charType.SPR,x,y,0)
+				local char=world.chars[cell.charId]
+				local chTyp=CONST.CHTYPS[char.chTyp]
+				spr(chTyp.SPR,x,y,0)
 			end
 		end
 	end
-	local areaCell=world.atlas[av.aX][av.atlasRow][av.mX][av.mY]
-	local character=world.chars[areaCell.charId]
-	print(character.moveCost)
-	if keyp(58,20,20) then
+	local mapCell=world.atlas[av.aX][av.aY][av.mX][av.mY]
+	local char=world.chars[mapCell.charId]
+	if char.starve>0 then
+		print("STARVING(x"..char.starve..")",136,0,1)
+	end
+	if char.exhaust>0 then
+		print("EXHAUSTED(x"..char.exhaust..")",136,8,1)
+	end
+	--local health=char.maxHealth-char.exhaust-char.starve
+	--local x=136
+	if keyp(58,10,10) or btnp(0,10,10) then
 		MvAvatar(0,-1)
-	elseif keyp(59,20,20) then
+	elseif keyp(59,10,10) or btnp(1,10,10) then
 		MvAvatar(0,1)
-	elseif keyp(60,20,20) then
+	elseif keyp(60,10,10) or btnp(2,10,10) then
 		MvAvatar(-1,0)
-	elseif keyp(61,20,20) then
+	elseif keyp(61,10,10) or btnp(3,10,10) then
 		MvAvatar(1,0)
 	end
+end
+function BOOT()
+	MkWorld()
+	tf=DrawMap
 end
 function TIC()
 	cls(0)
 	poke(0x3ffb,0)
-	DrawMap()
+	tf()
 	if keyp(70) then
 		exit()
 	end
