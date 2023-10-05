@@ -9,6 +9,114 @@ local CONST={
 	MAZE_ROWS=8,
 	MAP_COLS=15,
 	MAP_ROWS=15,
+	CITY_NAMES={
+"Aelville",
+"Aldhedge",
+"Barrowhaven",
+"Blackfair",
+"Bluemeadow",
+"Brighthurst",
+"Brookmill",
+"Brookville",
+"Bushmarsh",
+"Butterwolf",
+"Clearcourt",
+"Corness",
+"Courtbank",
+"Crystalshade",
+"Crystalwell",
+"Deepbank",
+"Eastfall",
+"Elfmoor",
+"Esterland",
+"Falconholt",
+"Fallcourt",
+"Fayflower",
+"Faywick",
+"Flowerlake",
+"Glassmont",
+"Goldbarrow",
+"Hollowlake",
+"Iceborough",
+"Icelyn",
+"Iceport",
+"Ironbarrow",
+"Ironston",
+"Jancliff",
+"Janmill",
+"Lakeacre",
+"Lightspell",
+"Lormoor",
+"Lorston",
+"Magebeach",
+"Magekeep",
+"Mallowpond",
+"Mallowtown",
+"Maplebridge",
+"Marblewald",
+"Meadowholt",
+"Millbush",
+"Newviolet",
+"Oldmerrow",
+"Oldwall",
+"Ostbarrow",
+"Ostlyn",
+"Pinelake",
+"Rayhaven",
+"Riverlake",
+"Sagecoast",
+"Sagepond",
+"Shadowlake",
+"Shoremill",
+"Silverelf",
+"Springland",
+"Vertapple",
+"Violetton",
+"Wayhaven",
+"Welllea",
+"Westerden",
+"Whiteviolet",
+"Windport",
+"Wintercastle",
+"Wintermere",
+"Winterwolf",
+"Woodbank",
+"Woodmarble"
+	},
+	TOWNS={
+		{
+			TERR="TOWNR",
+			WALL="WALLR"
+		},
+		{
+			TERR="TOWNO",
+			WALL="WALLO"
+		},
+		{
+			TERR="TOWNY",
+			WALL="WALLY"
+		},
+		{
+			TERR="TOWNG",
+			WALL="WALLG"
+		},
+		{
+			TERR="TOWNC",
+			WALL="WALLC"
+		},
+		{
+			TERR="TOWNB",
+			WALL="WALLB"
+		},
+		{
+			TERR="TOWNM",
+			WALL="WALLM"
+		},
+		{
+			TERR="TOWNW",
+			WALL="WALLW"
+		}
+	},
 	TERRS={
 		GR={
 			SPR=64,
@@ -80,6 +188,30 @@ local CONST={
 		TOWNW={
 			SPR=135,
 			VB="TOWN"
+		},
+		WALLR={
+			SPR=136
+		},
+		WALLO={
+			SPR=137
+		},
+		WALLY={
+			SPR=138
+		},
+		WALLG={
+			SPR=139
+		},
+		WALLC={
+			SPR=140
+		},
+		WALLB={
+			SPR=141
+		},
+		WALLM={
+			SPR=142
+		},
+		WALLW={
+			SPR=143
 		}
 	},
 	CHTYPS={
@@ -154,9 +286,69 @@ function MkAvatar()
 		mY=6,
 	}
 end
+function MkTown(townType,mzCell)
+	local town={}
+	town.name=CONST.CITY_NAMES[math.random(1,#CONST.CITY_NAMES)]
+	local grid={}
+	town.grid=grid
+	for x=1,CONST.MAP_COLS do
+		grid[x]={}
+		for y=1,CONST.MAP_ROWS do
+			local terr="GR"
+			if x==1 or y==1 or x==CONST.MAP_COLS or y==CONST.MAP_ROWS then
+				terr=CONST.TOWNS[townType].WALL
+			end
+			grid[x][y]={
+				terr=terr
+			}
+		end
+	end
+	local maze=Maze.Create(3,3)
+	if mzCell==1 then
+		maze[2][1]=maze[2][1]+1
+		town.x=CONST.MAP_COLS//2+1
+		town.y=1
+	elseif mzCell==2 then
+		maze[3][2]=maze[3][2]+2
+		town.x=CONST.MAP_COLS
+		town.y=CONST.MAP_ROWS//2+1
+	elseif mzCell==4 then
+		maze[2][3]=maze[2][3]+4
+		town.x=CONST.MAP_COLS//2+1
+		town.y=CONST.MAP_ROWS
+	else
+		maze[1][2]=maze[1][2]+8
+		town.x=1
+		town.y=CONST.MAP_ROWS//2+1
+	end
+	for rc=1,3 do
+		for rr=1,3 do
+			local rx=rc*5-2
+			local ry=rr*5-2
+			town.grid[rx][ry].terr="RD"
+			if (maze[rc][rr]&1)==1 then
+				town.grid[rx][ry-1].terr="RD"
+				town.grid[rx][ry-2].terr="RD"
+			end
+			if (maze[rc][rr]&2)==2 then
+				town.grid[rx+1][ry].terr="RD"
+				town.grid[rx+2][ry].terr="RD"
+			end
+			if (maze[rc][rr]&4)==4 then
+				town.grid[rx][ry+1].terr="RD"
+				town.grid[rx][ry+2].terr="RD"
+			end
+			if (maze[rc][rr]&8)==8 then
+				town.grid[rx-1][ry].terr="RD"
+				town.grid[rx-2][ry].terr="RD"
+			end
+		end
+	end
+	--town buildings
+	return town
+end
 function MkRoads()
 	local maze=Maze.Create(CONST.MAZE_COLS*2,CONST.MAZE_ROWS*2)
-	local towns={TOWNR,TOWNO,TOWNY,TOWNG,TOWNC,TOWNB,TOWNM,TOWNW}
 	for col=1,CONST.MAZE_COLS*2 do
 		for row=1,CONST.MAZE_ROWS*2 do
 			local mzCell=maze[col][row]
@@ -206,8 +398,11 @@ function MkRoads()
 				end
 			end
 			if mzCell==8 or mzCell==4 or mzCell==2 or mzCell==1 then
-				local town=towns[math.random(1,#towns)]
-				mp[8][8].terr=town
+				local townType=math.random(1,#CONST.TOWNS)
+				local townTerr=CONST.TOWNS[townType].TERR
+				local mapCell=mp[8][8]
+				mapCell.terr=townTerr
+				mapCell.town=MkTown(townType,mzCell)
 			end
 		end
 	end
@@ -276,6 +471,32 @@ function MvAvatar(dX,dY)
 	elseif td.VB=="BOAT" then
 		--TODO: pay for boat travel
 		MvAvatar(td.DX,td.DY)
+	elseif td.VB=="TOWN" then
+		PlaceAvatar(nAX,nAY,nMX,nMY)
+		tf=DrawTown
+		av.tX=world.atlas[av.aX][av.aY][av.mX][av.mY].town.x
+		av.tY=world.atlas[av.aX][av.aY][av.mX][av.mY].town.y
+	end
+end
+function DrawTown()
+	map(24,0,17,17)
+	local av=world.av
+	local mp=world.atlas[av.aX][av.aY]
+	local town=mp[av.mX][av.mY].town
+	for col,townCol in ipairs(town.grid) do
+		for row,cell in ipairs(townCol) do
+			local x=col*8
+			local y=row*8
+			spr(CONST.TERRS[cell.terr].SPR,x,y)
+			if av.tX==col and av.tY==row then
+				local char=world.chars[av.charId]
+				local chTyp=CONST.CHTYPS[char.chTyp]
+				spr(chTyp.SPR,x,y,0)
+			end
+		end
+	end
+	if keyp() then
+		tf=DrawMap
 	end
 end
 function DrawMap()
