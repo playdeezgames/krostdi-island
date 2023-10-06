@@ -1,14 +1,18 @@
 function package.preload.Maze()
 	return{Create=function(a,b)local c=table.insert;local d=math.random;local e={}while a>#e do local f={}c(e,f)while b>#f do c(f,0)end end;local g={{f=1,x=0,y=-1,o=3},{f=2,x=1,y=0,o=4},{f=4,x=0,y=1,o=1},{f=8,x=-1,y=0,o=2}}local h=d(1,a)local i=d(1,b)local j;local k;e[h][i]=32;local l=0;for m,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b then l=l+1;e[j][k]=e[j][k]+16 end end;while l>0 do repeat h=d(1,a)i=d(1,b)until e[h][i]&16==16;local o={}for p,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b and e[j][k]&32==32 then c(o,p)end end;local q=o[d(1,#o)]e[h][i]=e[h][i]|g[q].f;e[h][i]=e[h][i]&47;e[h][i]=e[h][i]|32;j=h+g[q].x;k=i+g[q].y;q=g[q].o;e[j][k]=e[j][k]|g[q].f;l=l-1;for m,n in ipairs(g)do j=h+n.x;k=i+n.y;if j>=1 and k>=1 and j<=a and k<=b and e[j][k]<16 then l=l+1;e[j][k]=e[j][k]+16 end end end;for h=1,a do for i=1,b do e[h][i]=e[h][i]&15 end end;return e end}
 end
+function package.preload.Grid()
+	return{Create=function(a,b,c)local d={}for e=1,a do d[e]={}for f=1,b do d[e][f]=c(e,f)end end;return d end}
+end
 local Maze=require("Maze")
+local Grid=require("Grid")
 local world
 local tf
 local CONST={
-	MAZE_COLS=8,
-	MAZE_ROWS=8,
-	MAP_COLS=15,
-	MAP_ROWS=15,
+	MZ_W=8,
+	MZ_H=8,
+	MP_W=15,
+	MP_H=15,
 	CITY_NAMES={"Aelville","Aldhedge","Barrowhaven","Blackfair","Bluemeadow","Brighthurst","Brookmill","Brookville","Bushmarsh","Butterwolf","Clearcourt","Corness","Courtbank","Crystalshade","Crystalwell","Deepbank","Eastfall","Elfmoor","Esterland","Falconholt","Fallcourt","Fayflower","Faywick","Flowerlake","Glassmont","Goldbarrow","Hollowlake","Iceborough","Icelyn","Iceport","Ironbarrow","Ironston","Jancliff","Janmill","Lakeacre","Lightspell","Lormoor","Lorston","Magebeach","Magekeep","Mallowpond","Mallowtown","Maplebridge","Marblewald","Meadowholt","Millbush","Newviolet","Oldmerrow","Oldwall","Ostbarrow","Ostlyn","Pinelake","Rayhaven","Riverlake","Sagecoast","Sagepond","Shadowlake","Shoremill","Silverelf","Springland","Vertapple","Violetton","Wayhaven","Welllea","Westerden","Whiteviolet","Windport","Wintercastle","Wintermere","Winterwolf","Woodbank","Woodmarble"},
 	TOWNS={
 		{
@@ -150,45 +154,23 @@ local CONST={
 	}
 }
 function MkMp(mX,mY)
-	local mp= {}
 	local tlut={
 	[64]="GR",
 	[65]="WT",
 	[66]="TR"
 	}
-	for col=1,CONST.MAP_COLS do
-		local dX=(col-1)//5
-		mp[col]={}
-		for row=1,CONST.MAP_ROWS do
-			local dY=(row-1)//5
-			mp[col][row]={
-				terr=tlut[mget(mX+dX,mY+dY)]
-			}
-		end
-	end
-	return mp
+	return Grid.Create(CONST.MP_W,CONST.MP_H,function(col,row) 
+		return {
+			terr=tlut[mget(mX+(col-1)//5,mY+(row-1)//5)]
+		}
+	end)
 end
 function MkAtlas()
-	local maze=Maze.Create(CONST.MAZE_COLS,CONST.MAZE_ROWS)
-	local atlas={}
-	while #atlas<CONST.MAZE_COLS*2 do
-		local aX={}
-		while #aX<CONST.MAZE_ROWS*2 do
-			table.insert(aX,{})
-		end
-		table.insert(atlas,aX)
-	end
-	for x=1,CONST.MAZE_COLS do
-		for y=1,CONST.MAZE_ROWS do
-			local mzCell=maze[x][y]
-			local mX=(mzCell%4)*6
-			local mY=(mzCell//4)*6
-			atlas[x*2-1][y*2-1]=MkMp(mX,mY)
-			atlas[x*2][y*2-1]=MkMp(mX+3,mY)
-			atlas[x*2-1][y*2]=MkMp(mX,mY+3)
-			atlas[x*2][y*2]=MkMp(mX+3,mY+3)
-		end
-	end
+	local maze=Maze.Create(CONST.MZ_W,CONST.MZ_H)
+	local atlas=Grid.Create(CONST.MZ_W*2,CONST.MZ_H*2,function(col,row) 
+		local mzCell=maze[(col-1)//2+1][(row-1)//2+1]
+		return MkMp((mzCell%4)*6+((col-1)%2)*3,(mzCell//4)*6+((row-1)%2)*3)
+	end)
 	return atlas
 end
 function MkChar(chTyp)
@@ -214,70 +196,66 @@ function MkAvatar()
 	}
 end
 function MkTown(townType,mzCell)
-	local town={}
-	town.name=CONST.CITY_NAMES[math.random(1,#CONST.CITY_NAMES)]
-	local grid={}
-	town.grid=grid
-	for x=1,CONST.MAP_COLS do
-		grid[x]={}
-		for y=1,CONST.MAP_ROWS do
-			local terr="GR"
-			if x==1 or y==1 or x==CONST.MAP_COLS or y==CONST.MAP_ROWS then
-				terr=CONST.TOWNS[townType].WALL
-			end
-			grid[x][y]={
-				terr=terr
-			}
+	local tn={}
+	tn.name=CONST.CITY_NAMES[math.random(1,#CONST.CITY_NAMES)]
+	tn.grid=Grid.Create(CONST.MP_W,CONST.MP_H,function(x,y)
+		local terr="GR"
+		if x==1 or y==1 or x==CONST.MP_W or y==CONST.MP_H then
+			terr=CONST.TOWNS[townType].WALL
 		end
-	end
-	local maze=Maze.Create(3,3)
+		return {
+			terr=terr
+		}
+	end)
+	local mz=Maze.Create(3,3)
 	if mzCell==1 then
-		maze[2][1]=maze[2][1]+1
-		town.x=CONST.MAP_COLS//2+1
-		town.y=1
+		mz[2][1]=mz[2][1]+1
+		tn.x=CONST.MP_W//2+1
+		tn.y=1
 	elseif mzCell==2 then
-		maze[3][2]=maze[3][2]+2
-		town.x=CONST.MAP_COLS
-		town.y=CONST.MAP_ROWS//2+1
+		mz[3][2]=mz[3][2]+2
+		tn.x=CONST.MP_W
+		tn.y=CONST.MP_H//2+1
 	elseif mzCell==4 then
-		maze[2][3]=maze[2][3]+4
-		town.x=CONST.MAP_COLS//2+1
-		town.y=CONST.MAP_ROWS
+		mz[2][3]=mz[2][3]+4
+		tn.x=CONST.MP_W//2+1
+		tn.y=CONST.MP_H
 	else
-		maze[1][2]=maze[1][2]+8
-		town.x=1
-		town.y=CONST.MAP_ROWS//2+1
+		mz[1][2]=mz[1][2]+8
+		tn.x=1
+		tn.y=CONST.MP_H//2+1
 	end
+	local tg=tn.grid
 	for rc=1,3 do
 		for rr=1,3 do
 			local rx=rc*5-2
 			local ry=rr*5-2
-			town.grid[rx][ry].terr="RD"
-			if (maze[rc][rr]&1)==1 then
-				town.grid[rx][ry-1].terr="RD"
-				town.grid[rx][ry-2].terr="RD"
+			tg[rx][ry].terr="RD"
+			if (mz[rc][rr]&1)==1 then
+				tg[rx][ry-1].terr="RD"
+				tg[rx][ry-2].terr="RD"
 			end
-			if (maze[rc][rr]&2)==2 then
-				town.grid[rx+1][ry].terr="RD"
-				town.grid[rx+2][ry].terr="RD"
+			if (mz[rc][rr]&2)==2 then
+				tg[rx+1][ry].terr="RD"
+				tg[rx+2][ry].terr="RD"
 			end
-			if (maze[rc][rr]&4)==4 then
-				town.grid[rx][ry+1].terr="RD"
-				town.grid[rx][ry+2].terr="RD"
+			if (mz[rc][rr]&4)==4 then
+				tg[rx][ry+1].terr="RD"
+				tg[rx][ry+2].terr="RD"
 			end
-			if (maze[rc][rr]&8)==8 then
-				town.grid[rx-1][ry].terr="RD"
-				town.grid[rx-2][ry].terr="RD"
+			if (mz[rc][rr]&8)==8 then
+				tg[rx-1][ry].terr="RD"
+				tg[rx-2][ry].terr="RD"
 			end
 		end
 	end
 	--town buildings
-	return town
+	return tn
 end
 function MkRoads()
-	local maze=Maze.Create(CONST.MAZE_COLS*2,CONST.MAZE_ROWS*2)
-	for col=1,CONST.MAZE_COLS*2 do
-		for row=1,CONST.MAZE_ROWS*2 do
+	local maze=Maze.Create(CONST.MZ_W*2,CONST.MZ_H*2)
+	for col=1,CONST.MZ_W*2 do
+		for row=1,CONST.MZ_H*2 do
 			local mzCell=maze[col][row]
 			local mp=world.atlas[col][row]
 			if (mzCell&1)==1 then
@@ -371,19 +349,19 @@ function MvAvatar(dX,dY)
 	local nMX=av.mX+dX
 	local nAX=av.aX
 	if nMX<1 then
-		nMX=nMX+CONST.MAP_COLS
+		nMX=nMX+CONST.MP_W
 		nAX=nAX-1
-	elseif nMX>CONST.MAP_COLS then
-		nMX=nMX-CONST.MAP_COLS
+	elseif nMX>CONST.MP_W then
+		nMX=nMX-CONST.MP_W
 		nAX=nAX+1
 	end	
 	local nMY=av.mY+dY
 	local nAY=av.aY
 	if nMY<1 then
-		nMY=nMY+CONST.MAP_ROWS
+		nMY=nMY+CONST.MP_H
 		nAY=nAY-1
-	elseif nMY>CONST.MAP_ROWS then
-		nMY=nMY-CONST.MAP_ROWS
+	elseif nMY>CONST.MP_H then
+		nMY=nMY-CONST.MP_H
 		nAY=nAY+1
 	end
 	local nCell=world.atlas[nAX][nAY][nMX][nMY]

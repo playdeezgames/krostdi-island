@@ -1,8 +1,8 @@
 local Grid=require("grid")
 local Columns=4
 local Rows=5
-function Generator()
-    return math.random(0,9)
+function Generator(column,row)
+    return (column+row)%10
 end
 
 local subject=Grid.Create(Columns,Rows,Generator)
