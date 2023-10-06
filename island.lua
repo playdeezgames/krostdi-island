@@ -166,9 +166,9 @@ function MkMp(mX,mY)
 	end)
 end
 function MkAtlas()
-	local maze=Maze.Create(CONST.MZ_W,CONST.MZ_H)
+	local mz=Maze.Create(CONST.MZ_W,CONST.MZ_H)
 	local atlas=Grid.Create(CONST.MZ_W*2,CONST.MZ_H*2,function(col,row) 
-		local mzCell=maze[(col-1)//2+1][(row-1)//2+1]
+		local mzCell=mz[(col-1)//2+1][(row-1)//2+1]
 		return MkMp((mzCell%4)*6+((col-1)%2)*3,(mzCell//4)*6+((row-1)%2)*3)
 	end)
 	return atlas
@@ -186,13 +186,20 @@ function MkChar(chTyp)
 end
 function MkAvatar()
 	local charId=MkChar("AVATAR")
-	world.atlas[1][1][6][6].charId=charId
+	local aX,aY,mX,mY
+	repeat
+		aX=math.random(1,CONST.MZ_W*2)
+		aY=math.random(1,CONST.MZ_H*2)
+		mX=math.random(1,CONST.MP_W)
+		mY=math.random(1,CONST.MP_H)
+	until world.atlas[aX][aY][mX][mY].terr=="GR"
+	world.atlas[aX][aY][mX][mY].charId=charId
 	world.av= {
 		charId=charId,
-		aX=1,
-		aY=1,
-		mX=6,
-		mY=6,
+		aX=aX,
+		aY=aY,
+		mX=mX,
+		mY=mY,
 	}
 end
 function MkTown(townType,mzCell)
